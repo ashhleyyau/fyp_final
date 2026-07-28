@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>My Posts</h2>
+    {% if posts %}
+        <div class="posts-grid">
+            {% for post in posts %}
+            <div class="post-card" id="post-{{ post['id'] }}" {% if highlight_id == post['id'] %}style="border: 2px solid #e74c3c; box-shadow: 0 0 10px rgba(231,76,60,0.3);"{% endif %}>
+                <!-- Image container -->
+                <div style="width: 100%; height: 180px; background-color: white; display: flex; align-items: center; justify-content: center; border-radius: 4px; margin-bottom: 8px;">
+                    {% if post['image_path'] %}
+                        <img src="{{ url_for('static', filename='photos/' + post['image_path']) }}" alt="Food image" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='photos/default_food.jpg') }}" alt="Default food image" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    {% endif %}
+                </div>
+                <h3>{{ post['food_name'] }}</h3>
+                <p>Type: {{ post['food_type'].capitalize() }}</p>
+                <p>Area: {{ post['area'] }}</p>
+                <p>District: {{ post['district'] }}</p>
+                <p>Estate / Building: {{ post['estate_building'] if post['estate_building'] else 'N/A' }}</p>
+                <p>Expiry: {{ post['expiry_date'] }}</p>
+                <p>Status: {{ post['status'].capitalize() }}</p>
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; align-items: center;">
+                    <a href="{{ url_for('view_post', post_id=post['id']) }}" class="btn">View Details</a>
+                    <form action="{{ url_for('delete_post', post_id=post['id']) }}" method="post" onsubmit="return confirm('Delete this post?');" style="display: inline;">
+                        <button type="submit" class="btn">Delete</button>
+                    </form>
+                    <form action="{{ url_for('extend_post', post_id=post['id']) }}" method="post" style="display: inline-flex; gap: 0.3rem; align-items: center;">
+                        <select name="days" style="padding: 0.3rem; border-radius: 4px; border: 1px solid #ddd;">
+                            <option value="1">1 day</option>
+                            <option value="3" selected>3 days</option>
+                            <option value="5">5 days</option>
+                            <option value="7">7 days</option>
+                        </select>
+                        <button type="submit" class="btn">Extend</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>You haven't posted any food yet. <a href="{{ url_for('create_post') }}" class="btn">New Post</a></p>
+    {% endif %}
+</div>
+
+{% if highlight_id %}
+<script>
+    (function() {
+        // Wait for the entire page (including images) to fully load
+        window.addEventListener('load', function() {
+            var postElement = document.getElementById('post-{{ highlight_id }}');
+            if (postElement) {
+                // Smooth scroll to the element, centering it in the viewport
+                postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Keep the red border for 5 seconds, then remove it
+                setTimeout(function() {
+                    postElement.style.border = '';
+                    postElement.style.boxShadow = '';
+                }, 5000);
+            }
+        });
+    })();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Edit Post</h2>
+    <form method="post" enctype="multipart/form-data">
+        <input type="text" name="food_name" value="{{ post['food_name'] }}" required style="margin-bottom: 15px; width: 100%; padding: 0.5rem;">
+        <select name="food_type" required style="margin-bottom: 15px; width: 100%; padding: 0.5rem;">
+            <option value="bread" {% if post['food_type']=='bread' %}selected{% endif %}>Bread</option>
+            <option value="cake" {% if post['food_type']=='cake' %}selected{% endif %}>Cake</option>
+            <option value="fruit" {% if post['food_type']=='fruit' %}selected{% endif %}>Fruit</option>
+            <option value="meal" {% if post['food_type']=='meal' %}selected{% endif %}>Meal</option>
+            <option value="vegetable" {% if post['food_type']=='vegetable' %}selected{% endif %}>Vegetable</option>
+        </select>
+        <textarea name="description" placeholder="Description" style="margin-bottom: 15px; width: 100%;">{{ post['description'] or '' }}</textarea>
+        
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+            <div style="flex: 1;">
+                <label>Area:</label>
+                <select name="area" id="areaSelect" required style="width: 100%; padding: 0.5rem;">
+                    <option value="Hong Kong Island" {% if post['area']=='Hong Kong Island' %}selected{% endif %}>Hong Kong Island</option>
+                    <option value="Kowloon" {% if post['area']=='Kowloon' %}selected{% endif %}>Kowloon</option>
+                    <option value="New Territories" {% if post['area']=='New Territories' %}selected{% endif %}>New Territories</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label>District:</label>
+                <select name="district" id="districtSelect" required style="width: 100%; padding: 0.5rem;">
+                    <option value="">Select District</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label>Estate / Building:</label>
+                <input type="text" name="estate_building" value="{{ post['estate_building'] or '' }}" style="width: 100%; padding: 0.5rem;">
+            </div>
+            <div style="flex: 1;">
+                <label>Expiry Date:</label>
+                <input type="text" name="expiry_date" id="expiry_date" class="datepicker" value="{{ post['expiry_date'] }}" required style="width: 100%; padding: 0.5rem;" placeholder="YYYY-MM-DD">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            {% if post['image_path'] %}
+                <div style="margin-bottom: 12px;"><img src="{{ url_for('static', filename='photos/' + post['image_path']) }}" alt="Food image" style="max-width: 200px; max-height: 120px;"></div>
+                <div style="margin-bottom: 12px;">
+                    <label>
+                        <input type="checkbox" name="delete_image" value="1"> Delete image
+                    </label>
+                </div>
+            {% else %}
+                <p style="margin-bottom: 12px;">No Image.</p>
+            {% endif %}
+            <div>
+                <button type="button" id="custom-upload-btn" class="btn">Upload Photo</button>
+                <span id="file-name-display"></span>
+                <input type="file" name="image" id="image-upload" accept="image/*" style="display: none;">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label>Status:</label>
+            <select name="status" required style="width: auto; padding: 0.3rem 0.5rem;">
+                <option value="available" {% if post['status'] == 'available' %}selected{% endif %}>Available</option>
+                <option value="claimed" {% if post['status'] == 'claimed' %}selected{% endif %}>Claimed</option>
+            </select>
+        </div>
+        
+        <button type="submit" class="btn">Update</button>
+    </form>
+</div>
+
+<script>
+    initDistrictDropdown('areaSelect', 'districtSelect', "{{ post['district'] }}");
+    initCustomFileUpload('image-upload', 'file-name-display', 'custom-upload-btn');
+</script>
+{% endblock %}

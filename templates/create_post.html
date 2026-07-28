@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>New Post</h2>
+    <form method="post" enctype="multipart/form-data">
+        <input type="text" name="food_name" placeholder="Food Name" required style="margin-bottom: 15px; width: 100%; padding: 0.5rem;">
+        
+        <select name="food_type" required style="margin-bottom: 15px; width: 100%; padding: 0.5rem;">
+            <option value="" disabled selected>Select Type</option>
+            <option value="bread">Bread</option>
+            <option value="cake">Cake</option>
+            <option value="fruit">Fruit</option>
+            <option value="meal">Meal</option>
+            <option value="vegetable">Vegetable</option>
+        </select>
+        
+        <textarea name="description" placeholder="Description" style="margin-bottom: 15px; width: 100%;"></textarea>
+        
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+            <div style="flex: 1;">
+                <label>Area:</label>
+                <select name="area" id="areaSelect" required style="width: 100%; padding: 0.5rem;">
+                    <option value="" disabled selected>Select Area</option>
+                    <option value="Hong Kong Island">Hong Kong Island</option>
+                    <option value="Kowloon">Kowloon</option>
+                    <option value="New Territories">New Territories</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label>District:</label>
+                <select name="district" id="districtSelect" required style="width: 100%; padding: 0.5rem;">
+                    <option value="" disabled selected>Select District</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label>Estate / Building:</label>
+                <input type="text" name="estate_building" id="estate_building" placeholder="Estate / Building" style="width: 100%; padding: 0.5rem;">
+            </div>
+            <div style="flex: 1;">
+                <label>Expiry Date:</label>
+                <input type="text" name="expiry_date" id="expiry_date" class="datepicker" required style="width: 100%; padding: 0.5rem;" placeholder="YYYY-MM-DD">
+            </div>
+        </div>
+        
+        <!-- Custom file upload button with label removed -->
+        <div style="margin-bottom: 15px;">
+            <div>
+                <button type="button" id="custom-upload-btn" class="btn">Upload Photo</button>
+                <span id="file-name-display"></span>
+                <input type="file" name="image" id="image-upload" accept="image/*" style="display: none;">
+            </div>
+        </div>
+        
+        <div style="clear: both; margin-top: 5px;">
+            <button type="submit" class="btn">Post</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    initDistrictDropdown('areaSelect', 'districtSelect', '', true);
+    initCustomFileUpload('image-upload', 'file-name-display', 'custom-upload-btn');
+</script>
+{% endblock %}

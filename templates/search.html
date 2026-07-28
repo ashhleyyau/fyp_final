@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <form action="{{ url_for('search') }}" method="get" class="filter-bar" style="display: flex; gap: 0.5rem; flex-wrap: nowrap; align-items: center; overflow-x: auto;">
+        <input type="text" name="q" placeholder="Search food..." value="{{ query }}" autocomplete="off" style="flex: 3; min-width: 150px; padding: 0.4rem;">
+        <select name="area" id="areaSelect" style="flex: 1; min-width: 100px; padding: 0.4rem;">
+            <option value="">Select Area</option>
+            <option value="Hong Kong Island" {% if area == 'Hong Kong Island' %}selected{% endif %}>Hong Kong Island</option>
+            <option value="Kowloon" {% if area == 'Kowloon' %}selected{% endif %}>Kowloon</option>
+            <option value="New Territories" {% if area == 'New Territories' %}selected{% endif %}>New Territories</option>
+        </select>
+        <select name="district" id="districtSelect" style="flex: 1; min-width: 100px; padding: 0.4rem;">
+            <option value="">Select District</option>
+        </select>
+        <select name="food_type" style="flex: 1; min-width: 100px; padding: 0.4rem;">
+            <option value="">All Types</option>
+            <option value="bread" {% if food_type == 'bread' %}selected{% endif %}>Bread</option>
+            <option value="cake" {% if food_type == 'cake' %}selected{% endif %}>Cake</option>
+            <option value="fruit" {% if food_type == 'fruit' %}selected{% endif %}>Fruit</option>
+            <option value="meal" {% if food_type == 'meal' %}selected{% endif %}>Meal</option>
+            <option value="vegetable" {% if food_type == 'vegetable' %}selected{% endif %}>Vegetable</option>
+        </select>
+        <button type="submit" class="btn">Search</button>
+    </form>
+
+    <!-- Toggle buttons -->
+    <div style="margin: 1rem 0;">
+        <button id="listViewBtn" class="btn">📋 List</button>
+        <button id="mapViewBtn" class="btn">🗺️ Map</button>
+    </div>
+
+    <!-- Typo suggestion -->
+    {% if correction_suggestion %}
+    <div class="correction-box" style="background: #fff3cd; padding: 0.5rem; margin: 1rem 0; border-radius: 4px;">
+        Did you mean <a href="{{ url_for('search', q=correction_suggestion, area=area, district=district, food_type=food_type) }}">{{ correction_suggestion }}</a>?
+    </div>
+    {% endif %}
+
+    <!-- List view -->
+    <div id="postsContainer">
+    {% if posts %}
+        {% if is_fallback %}
+            <p class="search-result-info">No results found. Showing all available foods.</p>
+        {% elif query %}
+            {% set filter_parts = [] %}
+            {% if district %}
+                {% set _ = filter_parts.append(district) %}
+            {% elif area %}
+                {% set _ = filter_parts.append(area) %}
+            {% endif %}
+            {% if food_type %}
+                {% set _ = filter_parts.append(food_type) %}
+            {% endif %}
+            {% set filter_text = filter_parts|join(', ') %}
+            {% if filter_text %}
+                <p class="search-result-info">Found {{ posts|length }} result{% if posts|length != 1 %}s{% endif %} for "{{ query }}" in {{ filter_text }}</p>
+            {% else %}
+                <p class="search-result-info">Found {{ posts|length }} result{% if posts|length != 1 %}s{% endif %} for "{{ query }}"</p>
+            {% endif %}
+        {% else %}
+            {# No keyword: filter only #}
+            {% if food_type %}
+                {% set location = district if district else area %}
+                {% set type_capitalized = food_type.capitalize() %}
+                {% if location %}
+                    <p class="search-result-info">Found {{ posts|length }} {{ type_capitalized }} result{% if posts|length != 1 %}s{% endif %} in {{ location }}</p>
+                {% else %}
+                    <p class="search-result-info">Found {{ posts|length }} {{ type_capitalized }} result{% if posts|length != 1 %}s{% endif %}</p>
+                {% endif %}
+            {% else %}
+                {% set filter_parts = [] %}
+                {% if district %}
+                    {% set _ = filter_parts.append(district) %}
+                {% elif area %}
+                    {% set _ = filter_parts.append(area) %}
+                {% endif %}
+                {% set filter_text = filter_parts|join(', ') %}
+                {% if filter_text %}
+                    <p class="search-result-info">Found {{ posts|length }} food result{% if posts|length != 1 %}s{% endif %} in {{ filter_text }}</p>
+                {% else %}
+                    <p class="search-result-info">Available Foods</p>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+
+        <div class="posts-grid" id="postsGrid">
+            {% for post in posts %}
+            <div class="post-card" data-post-id="{{ post.id }}">
+                <div style="width: 100%; height: 180px; background-color: white; display: flex; align-items: center; justify-content: center; border-radius: 4px; margin-bottom: 8px;">
+                    {% if post['image_path'] %}
+                        <img src="{{ url_for('static', filename='photos/' + post['image_path']) }}" alt="Food image" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='photos/default_food.jpg') }}" alt="Default food image" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    {% endif %}
+                </div>
+                <p style="font-size: 0.9em; color: #555; margin-bottom: 4px;">@{{ post['username'] }}</p>
+                <h3>{{ post['food_name'] }}</h3>
+                <p>Type: {{ post['food_type'].capitalize() }}</p>
+                <p>Area: {{ post['area'] }}</p>
+                <p>District: {{ post['district'] }}</p>
+                <p>Estate / Building: {{ post['estate_building'] if post['estate_building'] else 'N/A' }}</p>
+                <p>Expiry Date: {{ post['expiry_date'] }}
+                    {% if post.is_expiring_soon %}
+                        <span class="urgent">⚠️ Expires soon!</span>
+                    {% endif %}
+                </p>
+                <p>Status: {{ post['status'].capitalize() }}</p>
+                <a href="{{ url_for('view_post', post_id=post['id']) }}" class="btn">View Details</a>
+            </div>
+            {% endfor %}
+        </div>
+    {% elif not correction_suggestion %}
+        <p class="search-result-info">No results available.</p>
+    {% endif %}
+    </div>
+
+    <!-- Map view -->
+    <div id="mapLayout" style="display: none; flex-direction: row; gap: 1rem; margin-top: 1rem;">
+        <div id="map" style="flex: 2.2; height: 800px; min-height: 400px; border-radius: 8px;"></div>
+        <div id="mapPostList" style="flex: 1; height: 800px; overflow-y: auto; background: white; border-radius: 8px; padding: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
+    </div>
+</div>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    initDistrictDropdown('areaSelect', 'districtSelect', "{{ district }}");
+
+    const listBtn = document.getElementById('listViewBtn');
+    const mapBtn = document.getElementById('mapViewBtn');
+    const postsContainer = document.getElementById('postsContainer');
+    const mapLayout = document.getElementById('mapLayout');
+
+    listBtn.addEventListener('click', function() {
+        sessionStorage.setItem('viewMode', 'list');
+        postsContainer.style.display = 'block';
+        mapLayout.style.display = 'none';
+        if (window.map) setTimeout(() => window.map.invalidateSize(), 100);
+    });
+
+    mapBtn.addEventListener('click', function() {
+        sessionStorage.setItem('viewMode', 'map');
+        postsContainer.style.display = 'none';
+        mapLayout.style.display = 'flex';
+        if (!window.mapInitialized) {
+            initMapAndList();
+        } else {
+            setTimeout(() => window.map.invalidateSize(), 100);
+            updateListByViewport();
+        }
+    });
+
+    let map = null, markers = [], postsData = [];
+    const postsJson = {{ posts | tojson | safe }};
+
+    function initMapAndList() {
+        postsData = postsJson.filter(p => p.latitude && p.longitude);
+        postsData.sort((a, b) => {
+            if (a.area < b.area) return -1;
+            if (a.area > b.area) return 1;
+            return a.district.localeCompare(b.district);
+        });
+
+        map = L.map('map').setView([22.319, 114.169], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        postsData.forEach(post => {
+            const building = post.estate_building || '';
+            const popupContent = `<b>${post.food_name}</b><br>${building}<br>${post.district}<br><a href="/post/${post.id}" target="_blank">View Details</a>`;
+            const marker = L.marker([post.latitude, post.longitude])
+                .addTo(map)
+                .bindPopup(popupContent);
+            marker.postId = post.id;
+            markers.push(marker);
+        });
+
+        markers.forEach(marker => {
+            marker.on('click', function() {
+                highlightListItem(this.postId);
+            });
+        });
+
+        map.on('moveend', updateListByViewport);
+        updateListByViewport();
+
+        window.map = map;
+        window.mapInitialized = true;
+        window.postsData = postsData;
+        setTimeout(() => map.invalidateSize(), 200);
+    }
+
+    function updateListByViewport() {
+        if (!map) return;
+        const bounds = map.getBounds();
+        const center = map.getCenter();
+        let visiblePosts = postsData.filter(post => bounds.contains(L.latLng(post.latitude, post.longitude)));
+        visiblePosts.sort((a, b) => {
+            const distA = L.latLng(a.latitude, a.longitude).distanceTo(center);
+            const distB = L.latLng(b.latitude, b.longitude).distanceTo(center);
+            return distA - distB;
+        });
+        populateList(visiblePosts);
+    }
+
+    function populateList(data) {
+        const container = document.getElementById('mapPostList');
+        const listData = data || postsData;
+        if (!listData.length) {
+            container.innerHTML = '<p style="padding: 1rem; color: #666;">No posts in current view.</p>';
+            return;
+        }
+        let html = '';
+        listData.forEach(post => {
+            const building = post.estate_building || '';
+            const hasBuilding = building && building !== 'N/A' && building !== '';
+            const imgSrc = post.image_path ? "{{ url_for('static', filename='photos/') }}" + post.image_path : "{{ url_for('static', filename='photos/default_food.jpg') }}";
+            html += `
+                <div class="map-list-item" data-post-id="${post.id}" style="padding: 0.2rem; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="flex: 1; min-width: 0;">
+                        <h4 style="margin: 0; font-size: 0.95rem;">${post.food_name}</h4>
+                        <p style="margin: 0.1rem 0; font-size: 0.8rem; color: #555; line-height: 1.3;">
+                            ${hasBuilding ? building + '<br>' : ''}${post.district}
+                        </p>
+                        <p style="margin: 0.2rem 0; font-size: 0.7rem; color: #888;">Expires: ${post.expiry_date}</p>
+                        <a href="/post/${post.id}" class="btn" style="margin-top: 0.2rem; font-size: 0.7rem; padding: 0.1rem 0.5rem;">View Details</a>
+                    </div>
+                    <div style="flex-shrink: 0; width: 150px; height: 80px; background: #f5f5f5; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        <img src="${imgSrc}" alt="Food" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+
+        container.querySelectorAll('.map-list-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') return;
+                const postId = parseInt(this.dataset.postId);
+                const marker = markers.find(m => m.postId === postId);
+                if (marker) {
+                    marker.openPopup();
+                    highlightListItem(postId);
+                    map.flyTo(marker.getLatLng(), 14);
+                }
+            });
+        });
+    }
+
+    function highlightListItem(postId) {
+        document.querySelectorAll('.map-list-item').forEach(el => el.style.backgroundColor = '');
+        const target = document.querySelector(`.map-list-item[data-post-id="${postId}"]`);
+        if (target) {
+            target.style.backgroundColor = '#e6f2ff';
+            target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+    }
+
+    (function() {
+        const viewMode = sessionStorage.getItem('viewMode');
+        if (viewMode === 'map') {
+            postsContainer.style.display = 'none';
+            mapLayout.style.display = 'flex';
+            if (!window.mapInitialized) {
+                initMapAndList();
+            } else {
+                setTimeout(() => window.map.invalidateSize(), 100);
+                updateListByViewport();
+            }
+        }
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Edit Profile</h2>
+    <form method="post">
+        <div style="margin-bottom: 20px;">
+            <p><strong>Username:</strong> {{ user['username'] }}</p>
+        </div>
+        <label>Area:</label>
+        <select name="area" id="areaSelect" required style="width:100%; padding:8px; margin-bottom:15px;">
+            <option value="Hong Kong Island" {% if user['area'] == 'Hong Kong Island' %}selected{% endif %}>Hong Kong Island</option>
+            <option value="Kowloon" {% if user['area'] == 'Kowloon' %}selected{% endif %}>Kowloon</option>
+            <option value="New Territories" {% if user['area'] == 'New Territories' %}selected{% endif %}>New Territories</option>
+        </select>
+        <label>District:</label>
+        <select name="district" id="districtSelect" required style="width:100%; padding:8px; margin-bottom:15px;">
+            <option value="">Select District</option>
+        </select>
+        <label>Estate / Building:</label>
+        <input type="text" name="estate_building" value="{{ user['estate_building'] or '' }}" style="width:100%; padding:8px; margin-bottom:15px;">
+        <button type="submit" class="btn">Update</button>
+    </form>
+</div>
+<script>
+    initDistrictDropdown('areaSelect', 'districtSelect', "{{ user['district'] }}");
+</script>
+{% endblock %}

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Share Platform</title>
+    <!-- Flatpickr CSS (English date picker) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        /* Reset and base styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; color: #1c4587; }
+        a { color: #1c4587; text-decoration: none; }
+        /* Navigation */
+        nav { background-color: #1c4587; color: white; padding: 1rem; }
+        .nav-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .logo { color: white; font-size: 1.5rem; font-weight: bold; text-decoration: none; }
+        .nav-links a { color: white; text-decoration: none; margin-left: 1.5rem; }
+        /* Container */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+        /* Underline text links in main content area (except buttons) */
+        .container a:not(.btn) {
+            text-decoration: underline;
+        }
+        /* Filter bar */
+        .filter-bar { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px; margin-bottom: 0; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+        .filter-bar select, .filter-bar input, .filter-bar button {
+            padding: 0.3rem 0.8rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background-color: white;
+        }
+        .filter-bar button {
+            background-color: #1c4587;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        /* Grid layout for posts (3 columns) */
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        /* Post card */
+        .post-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+        .post-card h3 {
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+        }
+        .post-card p {
+            margin-top: 4px;
+            margin-bottom: 4px;
+        }
+        /* Global button styles */
+        .btn {
+            display: inline-block;
+            background-color: #1c4587;
+            color: white !important;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            margin: 0.2rem;
+            line-height: 1.4;
+            white-space: nowrap;
+            width: auto;
+            font-family: Arial, sans-serif;
+            font-size: 0.9rem;
+        }
+        button.btn {
+            background-color: #1c4587;
+            border: none;
+        }
+        .btn:hover {
+            background-color: #0e2d5c;
+        }
+        .btn-danger {
+            background-color: #d9534f;
+        }
+        .btn-danger:hover {
+            background-color: #c9302c;
+        }
+        /* Ensure buttons inside post-card are not stretched */
+        .post-card .btn {
+            align-self: flex-start;
+        }
+        /* Urgent expiry warning */
+        .urgent { color: #e74c3c; font-weight: bold; }
+        /* Headings */
+        h2, h3 { margin-top: 20px; margin-bottom: 20px; }
+        .post-detail h2 { font-size: 1.17em; margin-top: 0; margin-bottom: 0.5rem; }
+        .search-result-info { margin-top: 20px; margin-bottom: 20px; }
+        /* Images inside posts */
+        .post-card img, .post-detail img { width: 300px; height: 180px; object-fit: contain; border-radius: 4px; }
+        /* Post detail sections */
+        .post-detail, .message-board, .recommendations { background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; }
+        .post-detail { margin-top: 20px; }
+        .message { background: #f9f9f9; padding: 0.5rem; margin: 0.5rem 0; border-radius: 4px; }
+        /* Form elements */
+        textarea, input[type="text"], input[type="password"], select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        textarea { height: 120px; resize: vertical; }
+        /* File name display (used by custom upload) */
+        #file-name-display {
+            display: inline-block;
+            margin-left: 0.5rem;
+            color: #555;
+        }
+        /* Flash messages */
+        .flash-messages { margin-top: 20px; }
+        .flash { padding: 10px; border-radius: 4px; margin-bottom: 10px; }
+        .flash.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .flash.danger { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .flash.warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    </style>
+    <!-- Flatpickr JS (English locale) -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/default.js"></script>
+    <script>
+        // Area-to-district mapping for dynamic dropdowns
+        const areaDistricts = {
+            'Hong Kong Island': ['Central and Western', 'Wan Chai', 'Eastern', 'Southern'],
+            'Kowloon': ['Yau Tsim Mong', 'Sham Shui Po', 'Kowloon City', 'Wong Tai Sin', 'Kwun Tong'],
+            'New Territories': ['Tsuen Wan', 'Tuen Mun', 'Yuen Long', 'North', 'Tai Po', 'Sha Tin', 'Sai Kung', 'Islands', 'Kwai Tsing']
+        };
+        // List of all districts when no area is selected (for search mode)
+        const allDistricts = [
+            'Central and Western', 'Wan Chai', 'Eastern', 'Southern',
+            'Yau Tsim Mong', 'Sham Shui Po', 'Kowloon City', 'Wong Tai Sin', 'Kwun Tong',
+            'Tsuen Wan', 'Tuen Mun', 'Yuen Long', 'North', 'Tai Po', 'Sha Tin', 'Sai Kung', 'Islands', 'Kwai Tsing'
+        ];
+        // Initialize district dropdown based on area selection
+        function initDistrictDropdown(areaSelectId, districtSelectId, currentDistrictValue = '', requireAreaFirst = false) {
+            const areaSelect = document.getElementById(areaSelectId);
+            const districtSelect = document.getElementById(districtSelectId);
+            if (!areaSelect || !districtSelect) return;
+
+            function updateDistricts() {
+                const selectedArea = areaSelect.value;
+                if (requireAreaFirst) {
+                    if (!selectedArea) {
+                        districtSelect.disabled = true;
+                        districtSelect.innerHTML = '<option value="" disabled selected>Select Area First</option>';
+                        return;
+                    } else {
+                        districtSelect.disabled = false;
+                        const districts = areaDistricts[selectedArea] || [];
+                        // Add a disabled placeholder option to force manual selection
+                        districtSelect.innerHTML = '<option value="" disabled selected>Select District</option>';
+                        for (let d of districts) {
+                            const option = document.createElement('option');
+                            option.value = d;
+                            option.textContent = d;
+                            if (currentDistrictValue === d) {
+                                option.selected = true;
+                            }
+                            districtSelect.appendChild(option);
+                        }
+                    }
+                } else {
+                    // Normal mode: always enabled, show all districts with empty option
+                    districtSelect.disabled = false;
+                    let districtsToShow = allDistricts;
+                    if (selectedArea && areaDistricts[selectedArea]) {
+                        districtsToShow = areaDistricts[selectedArea];
+                    }
+                    districtSelect.innerHTML = '<option value="">Select District</option>';
+                    for (let d of districtsToShow) {
+                        const option = document.createElement('option');
+                        option.value = d;
+                        option.textContent = d;
+                        if (currentDistrictValue === d) {
+                            option.selected = true;
+                        }
+                        districtSelect.appendChild(option);
+                    }
+                }
+            }
+
+            areaSelect.addEventListener('change', updateDistricts);
+            updateDistricts();
+        }
+
+        // Initialize flatpickr on elements with class 'datepicker'
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInputs = document.querySelectorAll('.datepicker');
+            dateInputs.forEach(input => {
+                flatpickr(input, {
+                    dateFormat: "Y-m-d",
+                    allowInput: true,
+                    locale: "en"  // Force English locale
+                });
+            });
+        });
+
+        // Custom file upload handler (initial display empty)
+        function initCustomFileUpload(fileInputId, displaySpanId, buttonId) {
+            const fileInput = document.getElementById(fileInputId);
+            const displaySpan = document.getElementById(displaySpanId);
+            const customBtn = document.getElementById(buttonId);
+            if (!fileInput || !displaySpan || !customBtn) return;
+            displaySpan.textContent = '';
+            customBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length > 0) {
+                    displaySpan.textContent = fileInput.files[0].name;
+                } else {
+                    displaySpan.textContent = '';
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="{{ url_for('search') }}" class="logo">Food Share Platform</a>
+            <div class="nav-links">
+                <!-- New Post: visible to everyone except admin -->
+                {% if not session.is_admin %}
+                    <a href="{{ url_for('create_post') }}">New Post</a>
+                {% endif %}
+                <a href="{{ url_for('search') }}?q=">Search</a>
+                {% if session.user_id %}
+                    <a href="{{ url_for('profile') }}">Profile</a>
+                    {% if session.is_admin %}
+                        <a href="{{ url_for('admin_panel') }}">Admin</a>
+                    {% else %}
+                        <a href="{{ url_for('my_posts') }}">My Posts</a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login', next=request.path) }}">Login / Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages container">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message | safe }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>My Profile</h2>
+    <div class="profile" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <p><strong>Username:</strong> {{ user['username'] }}</p>
+        <p><strong>Area:</strong> {{ user['area'] if user['area'] else 'Not provided' }}</p>
+        <p><strong>District:</strong> {{ user['district'] if user['district'] else 'Not provided' }}</p>
+        <p><strong>Estate / Building:</strong> {{ user['estate_building'] if user['estate_building'] else 'Not provided' }}</p>
+        <a href="{{ url_for('edit_profile') }}" class="btn" style="margin-top: 1rem;">Edit</a>
+    </div>
+</div>
+{% endblock %}

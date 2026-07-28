@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Admin Dashboard</h2>
+    
+    <!-- Dashboard statistics cards -->
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem;">
+        <div class="post-card" style="flex: 1; min-width: 150px; text-align: center;">
+            <h4>Total Posts</h4>
+            <p style="font-size: 2rem; font-weight: bold;">{{ total_posts }}</p>
+        </div>
+        <div class="post-card" style="flex: 1; min-width: 150px; text-align: center;">
+            <h4>Total Users</h4>
+            <p style="font-size: 2rem; font-weight: bold;">{{ total_users }}</p>
+        </div>
+        <div class="post-card" style="flex: 1; min-width: 150px; text-align: center;">
+            <h4>Expired Available</h4>
+            <p style="font-size: 2rem; font-weight: bold;">{{ expired_available }}</p>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem;">
+        <div style="flex: 1; min-width: 250px;">
+            <canvas id="foodTypeChart" width="400" height="400"></canvas>
+        </div>
+        <div style="flex: 2; min-width: 300px;">
+            <canvas id="trendChart" width="600" height="400"></canvas>
+        </div>
+    </div>
+    
+    <hr>
+    
+    <!-- Users table -->
+    <h3>Users</h3>
+    <table border="1" cellpadding="8" style="width:100%; border-collapse:collapse;">
+        <tr><th>ID</th><th>Username</th><th>Admin?</th><th>Action</th></tr>
+        {% for u in users %}
+        <tr>
+            <td>{{ u['id'] }}</td>
+            <td>{{ u['username'] }}</td>
+            <td>{{ 'Yes' if u['is_admin'] else 'No' }}</td>
+            <td>
+                {% if not u['is_admin'] %}
+                <form action="{{ url_for('admin_ban_user', user_id=u['id']) }}" method="post">
+                    <button type="submit" class="btn btn-danger">Ban</button>
+                </form>
+                {% else %}
+                -
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    
+    <!-- Reported Posts section -->
+    <h3>Reported Posts</h3>
+    {% if reports %}
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem;">
+            {% for report in reports %}
+            <div class="post-card" style="margin: 0; padding: 1rem;">
+                <p><strong>Post:</strong> {{ report['food_name'] }} (ID {{ report['post_id'] }})</p>
+                <p><strong>Posted by:</strong> {{ report['post_author'] }}</p>
+                <p><strong>Reported by:</strong> {{ report['reporter_name'] }}</p>
+                <p><strong>Reason:</strong> {{ report['reason'] }}</p>
+                <p><strong>Date:</strong> {{ report['created_at'] }}</p>
+                <form action="{{ url_for('admin_delete_post', post_id=report['post_id']) }}" method="post" style="display:inline;">
+                    <button type="submit" class="btn">Delete Post</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No reports yet.</p>
+    {% endif %}
+</div>
+
+<!-- Chart.js CDN and scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Food type pie chart
+    const foodTypeLabels = {{ food_types | tojson }};
+    const foodTypeData = {{ food_counts | tojson }};
+    if (foodTypeLabels.length) {
+        const ctx1 = document.getElementById('foodTypeChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'pie',
+            data: {
+                labels: foodTypeLabels,
+                datasets: [{
+                    data: foodTypeData,
+                    backgroundColor: ['#1c4587', '#2e6da3', '#4c8cb5', '#6aaac7', '#88c8d9']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Posts by Food Type' }
+                }
+            }
+        });
+    }
+
+    // Recent 7 days trend bar chart
+    const trendLabels = {{ trend_labels | tojson }};
+    const trendData = {{ trend_values | tojson }};
+    if (trendLabels.length) {
+        const ctx2 = document.getElementById('trendChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: trendLabels,
+                datasets: [{
+                    label: 'New Posts',
+                    data: trendData,
+                    backgroundColor: '#1c4587'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'New Posts (Last 7 Days)' }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Number of Posts' } },
+                    x: { title: { display: true, text: 'Date' } }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="post-detail" style="display: flex; gap: 2rem; align-items: center;">
+        <div style="flex: 1;">
+            <p style="font-size: 1em; color: #555; margin-bottom: 4px;">@{{ post['username'] }}</p>
+            <h2>{{ post['food_name'] }}</h2>
+            <p>Type: {{ post['food_type'].capitalize() }}</p>
+            <p>Description: {{ post['description'] or 'No description' }}</p>
+            <p>Area: {{ post['area'] }}</p>
+            <p>District: {{ post['district'] }}</p>
+            <p>Estate / Building: {{ post['estate_building'] if post['estate_building'] else 'N/A' }}</p>
+            <p>Expiry Date: {{ post['expiry_date'] }}</p>
+            <p>Status: {{ post['status'].capitalize() }}</p>
+            
+            {% if session.user_id == post['user_id'] %}
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <a href="{{ url_for('edit_post', post_id=post['id']) }}" class="btn">Edit</a>
+                <form action="{{ url_for('delete_post', post_id=post['id']) }}" method="post" onsubmit="return confirm('Delete this post?');" style="display: inline;">
+                    <button type="submit" class="btn">Delete</button>
+                </form>
+            </div>
+            {% elif is_admin %}
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <form action="{{ url_for('delete_post', post_id=post['id']) }}" method="post" onsubmit="return confirm('Delete this post?');" style="display: inline;">
+                    <button type="submit" class="btn">Delete</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        {% if post['image_path'] %}
+        <div style="flex-shrink: 0;">
+            <img src="{{ url_for('static', filename='photos/' + post['image_path']) }}" alt="Food image">
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="message-board">
+        <h3>Messages</h3>
+        {% for msg in messages %}
+        <div class="message">
+            <strong>{{ msg['username'] }}</strong>: {{ msg['content'] }}
+            <small>{{ msg['created_at'] }}</small>
+        </div>
+        {% endfor %}
+        
+        {% if session.user_id %}
+        <form action="{{ url_for('add_message', post_id=post['id']) }}" method="post">
+            <textarea name="content" placeholder="Leave a message..." required></textarea>
+            <button type="submit" class="btn">Send</button>
+        </form>
+        {% else %}
+        <p style="margin-top: 1rem;"><a href="{{ url_for('login', next=request.path) }}">Login</a> to leave a message.</p>
+        {% endif %}
+    </div>
+    
+    {% if session.user_id and not is_admin %}
+    <div class="message-board" style="margin-top: 1rem;">
+        <h3>Report this post</h3>
+        <form action="{{ url_for('report_post', post_id=post['id']) }}" method="post">
+            <input type="text" name="reason" placeholder="Reason for reporting" required style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem;">
+            <button type="submit" class="btn">Report</button>
+        </form>
+    </div>
+    {% endif %}
+    
+    {% if recommendations and not is_admin %}
+    <div class="recommendations">
+        <h3>You might also like</h3>
+        <div class="posts-grid">
+            {% for rec in recommendations %}
+            <div class="post-card">
+                <p style="font-size: 0.9em; color: #555; margin-bottom: 4px;">@{{ rec['username'] }}</p>
+                <h3>{{ rec['food_name'] }}</h3>
+                <p>Type: {{ rec['food_type'].capitalize() }}</p>
+                <p>Area: {{ rec['area'] }}</p>
+                <p>District: {{ rec['district'] }}</p>
+                <p>Estate / Building: {{ rec['estate_building'] if rec['estate_building'] else 'N/A' }}</p>
+                <p>Expiry Date: {{ rec['expiry_date'] }}</p>
+                <p>Status: {{ rec['status'].capitalize() }}</p>
+                <a href="{{ url_for('view_post', post_id=rec['id']) }}" class="btn">View Details</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
